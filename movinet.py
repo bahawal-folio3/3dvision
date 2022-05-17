@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout, Flatten
+from tensorflow.keras.layers import Dense, Dropout, Flatten,BatchNormalization
 import tensorflow_hub as hub
 
 def get_model():
@@ -23,11 +23,10 @@ def get_model():
     model = Sequential([
 
         tf.keras.Model(inputs, outputs, name='movinet'),
-        
+        BatchNormalization(),
         Dense(4096, activation='relu', name='fc6'),
         Dropout(.5),
         Dense(4096, activation='relu', name='fc7'),
-        Dropout(.5),
         Dense(1, activation='sigmoid', name='fc8'),
     ])
     return model
