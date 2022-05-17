@@ -5,7 +5,7 @@ from numpy import asarray
 
 from create_csv import get_dataframe
 class DataGenerator(tf.keras.utils.Sequence):
-    def __init__(self, df, batch_size=32, num_classes=None, shuffle=True):
+    def __init__(self, df, batch_size=32,dim=172, num_classes=None, shuffle=True):
         self.batch_size = batch_size
         self.df = df
         self.indices = self.df.index.tolist()
@@ -13,7 +13,7 @@ class DataGenerator(tf.keras.utils.Sequence):
         self.shuffle = shuffle
         self.on_epoch_end()
         self.window = len(df.img[0])
-        self.dim = 112
+        self.dim = dim
         self.n_channels = 3
     def __len__(self):
         return len(self.indices) // self.batch_size
