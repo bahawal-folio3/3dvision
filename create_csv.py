@@ -1,6 +1,11 @@
 import os
 import pandas as pd 
 from tqdm import tqdm
+import numpy as np
+
+def one_hot(a, num_classes):
+  return np.squeeze(np.eye(num_classes)[a])
+
 def get_dataframe(classes,datadir,window=8):
     
     data = []
@@ -12,7 +17,7 @@ def get_dataframe(classes,datadir,window=8):
                 sliding_window = []
                 for k in range(j,window+j): # +1 to include last window
                     sliding_window.append(f'{video_path}{k}.jpg')
-                data.append([sliding_window,i])
+                data.append([sliding_window,one_hot(i,len(classes ))])
 
 
     df = pd.DataFrame(data)
@@ -26,4 +31,5 @@ if __name__ == "__main__":
     print(df.head())
     print(len(df.img[0]))
     print(df.img[0])
-    print(df['label'].value_counts())
+#     # print(df['label'].value_counts())
+#     print(one_hot(1, len(classes)))
