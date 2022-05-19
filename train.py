@@ -11,17 +11,21 @@ import datetime
 
 
 batch_size = 24
-dim = 112
+dim = 172
 window = 8
-model_name = 'a4'
-classes = ['service', 'everythingelse']
+model_name = 'a2'
+classes = ['service', 'hit','everythingelse']
 df = get_dataframe(classes, 'data', window=window)
 df = df.sample(frac=1).reset_index(drop=True)
-train_size = int(df.shape[0]*0.8)
-
+train_size = int(df.shape[0]*0.7)
+val_size = (len(df) - train_size)//2
 train_data = df[:train_size]
-test_data = df[train_size:].reset_index(drop=True)
-val_data = df[train_size:].reset_index(drop=True)
+print(len(df))
+print(f"train splie: 0-{train_size-1}")
+print(f"val split: {train_size}:{train_size + val_size-1}")
+print(f"test split: {train_size + val_size}:{df.shape[0]}")
+test_data = df[train_size+val_size:].reset_index(drop=True)
+val_data = df[train_size:train_size+val_size].reset_index(drop=True)
 
 
 train_loader = DataGenerator(train_data, batch_size=batch_size, dim=dim)
@@ -29,8 +33,8 @@ test_loader = DataGenerator(test_data, batch_size=batch_size, dim=dim)
 val_loader = DataGenerator(val_data, batch_size=batch_size, dim=dim)
 
 
-model = get_model(model_name='model_name')
-
+model = get_model(model_name=model_name)
+# model.load_weights('f1-8-train-False.h5')
 
 model.compile(
   optimizer=tf.keras.optimizers.Adam(),
@@ -70,5 +74,6 @@ history = model.fit(train_loader,
                     callbacks=[model_checkpoint_callback, tensorboard_callback]
                 )
 model.evaluate(test_loader)
+model.save('final-'+checkpoint_filepath)
 
 
