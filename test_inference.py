@@ -8,9 +8,9 @@ import time
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 # os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 dim = 172
-video_path = "550.mp4"
-model_path = 'a4-f1-8-trainableFalse.h5'
-model = get_model('a4')
+video_path = "510.mp4"
+model_path = 'final-frozen_layers-a0-f1-5-trainableTrue.h5'
+model = get_model('a0')
 model.load_weights(model_path)
 # model.summary()
 
@@ -19,10 +19,13 @@ cap = cv2.VideoCapture(video_path)
 inference_queue = deque()
 preds_queue = deque()
 FIRST_INFERENCE = True
-window = 8
+window = 5
+serve_count = 0
+serve_conf = 0
+pred = 3
+vote = 3
 while True:
-    pred = 1
-    vote = 1
+
 
 
     ret, frame = cap.read()
@@ -34,28 +37,30 @@ while True:
                 inference_queue.append(cv2.resize(frame, (dim, dim)))
 
         if len(inference_queue) < window:
-            inference_queue.append(cv2.resize(frame, (dim, dim)))
+            inference_queue.append(cv2.resize(frame, (dim, dim))/225.0)
 
         if len(inference_queue) == window:
-
-
-            pred = model(np.array(inference_queue)[np.newaxis])[0][1]
-            print(pred)
-
-            inference_queue.popleft()
-
-
-            print(f"serve conf:{pred} ")
-
-
-
+            t0 = time.time()
+            pred = model(np.array(inference_queue)[np.newaxis])[0]
+            pred = np.argmax(pred)
             FIRST_INFERENCE = False
-        if len(preds_queue) < 8:
+            inference_queue.popleft()
+            print(f"serve conf:{pred} inferece time: {time.time()-t0} ")
+
+
+
+
+        if len(preds_queue) < 3:
             preds_queue.append(int(pred))
-        if len(preds_queue) == 8:
+
+        if len(preds_queue) == 3:
 
             counter = Counter(preds_queue)
             vote = counter.most_common()[0][0]
+            if vote == 0:
+                serve_conf = 1
+            else:
+                serve_conf = 0
             preds_queue.popleft()
 
 
@@ -79,8 +84,9 @@ while True:
 
         # Using cv2.putText() method
         if not FIRST_INFERENCE and frame is not None:
-            image = cv2.putText(frame, f"server confidence: {vote}", org, font,
+            image = cv2.putText(frame, f"server conf.: {serve_conf}, vote {vote}", org, font,
                                 fontScale, color, thickness, cv2.LINE_AA)
+        frame = cv2.resize(frame,(640,480))
         cv2.imshow('test', frame)
         cv2.waitKey(1)
         if 0xFF == ord('q'):
