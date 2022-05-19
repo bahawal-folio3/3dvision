@@ -2,46 +2,61 @@ import cv2
 import numpy as np
 import tensorflow as tf
 from movinet import get_model
-from collections import deque
+from collections import deque, Counter
 import os
 import time
-# os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+# os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+dim = 172
 video_path = "550.mp4"
-model_path = 'checkpoint.h5'
-model = get_model()
+model_path = 'a4-f1-8-trainableFalse.h5'
+model = get_model('a4')
 model.load_weights(model_path)
 # model.summary()
 
 cap = cv2.VideoCapture(video_path)
 
 inference_queue = deque()
-FIRST_INFERENCE = False
-
+preds_queue = deque()
+FIRST_INFERENCE = True
+window = 8
 while True:
-    pred = 0
+    pred = 1
+    vote = 1
+
+
     ret, frame = cap.read()
     if ret == True:
         loop_time = time.time()
 
-        if len(inference_queue) < 5:
-            print('appending right')
-            start_enqueue = time.time()
-            inference_queue.append(cv2.resize(frame, (172, 172)))
-            print(f"enqueue time:{time.time()-start_enqueue}")
+        if FIRST_INFERENCE:
+            for i in range(window):
+                inference_queue.append(cv2.resize(frame, (dim, dim)))
 
-        if len(inference_queue) == 5:
+        if len(inference_queue) < window:
+            inference_queue.append(cv2.resize(frame, (dim, dim)))
 
-            t0 = time.time()
-            pred = model(np.array(inference_queue)[np.newaxis])[0][0]
+        if len(inference_queue) == window:
+
+
+            pred = model(np.array(inference_queue)[np.newaxis])[0][1]
+            print(pred)
 
             inference_queue.popleft()
 
-            print(f"serve conf:{1-pred} , inference time = {time.time()-t0}")
+
+            print(f"serve conf:{pred} ")
 
 
 
-            FIRST_INFERENCE =True
+            FIRST_INFERENCE = False
+        if len(preds_queue) < 8:
+            preds_queue.append(int(pred))
+        if len(preds_queue) == 8:
+
+            counter = Counter(preds_queue)
+            vote = counter.most_common()[0][0]
+            preds_queue.popleft()
 
 
         # Window name in which image is displayed
@@ -63,8 +78,8 @@ while True:
         thickness = 2
 
         # Using cv2.putText() method
-        if FIRST_INFERENCE and frame is not None:
-            image = cv2.putText(frame, f"server confidence {1-pred}", org, font,
+        if not FIRST_INFERENCE and frame is not None:
+            image = cv2.putText(frame, f"server confidence: {vote}", org, font,
                                 fontScale, color, thickness, cv2.LINE_AA)
         cv2.imshow('test', frame)
         cv2.waitKey(1)
@@ -73,10 +88,10 @@ while True:
         # cv2.waitKey(0)
     else:
         break
-    print(f"loop time:{time.time()-loop_time}")
+    # print(f"loop time:{time.time()-loop_time}")
 cap.release()
 cv2.destroyAllWindows()
-    #
+
 
 
 
