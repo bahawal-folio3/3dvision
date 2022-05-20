@@ -13,8 +13,8 @@ import datetime
 batch_size = 24
 dim = 172
 window = 8
-model_name = 'a2'
-classes = ['service', 'hit','everythingelse']
+model_name = 'a0'
+classes = ['service', 'hit', 'everythingelse']
 df = get_dataframe(classes, 'data', window=window)
 df = df.sample(frac=1).reset_index(drop=True)
 train_size = int(df.shape[0]*0.7)
@@ -55,8 +55,8 @@ tensorboard_callback = tf.keras.callbacks.TensorBoard(
     embeddings_metadata=None,
 ) # Enable histogram computation for every epoch.
 
-EPOCHS = 20
-checkpoint_filepath = f'{model_name}-f1-{window}-trainable{TRAINABLE}.h5'
+EPOCHS = 10
+checkpoint_filepath = f'frozen_layers-{model_name}-f1-{window}-trainable{TRAINABLE}.h5'
 
 model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
     filepath=checkpoint_filepath,
