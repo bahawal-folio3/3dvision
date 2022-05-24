@@ -9,7 +9,7 @@ import time
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 # os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 dim = 172
-video_path = "550.mp4"
+video_path = "tennis.mp4"
 model_path = 'frozen_layers-a0-f1-8-trainableTrue.h5'
 model = get_model('a0')
 model.load_weights(model_path)
@@ -28,9 +28,10 @@ pred = 3
 vote = 3
 fps = int(cap.get(cv2.CAP_PROP_FPS))
 print("FPS:", fps)
+cool_down_period = fps*2
 cooldowntime = 0
 cooldown = False
-out = cv2.VideoWriter('output.mp4', cv2.VideoWriter_fourcc(*'MJPG'), fps, (1280, 720))
+out = cv2.VideoWriter(f'output-{video_path}.mp4', cv2.VideoWriter_fourcc('m', 'p', '4', 'v'), fps, (1280, 720))
 while True:
     loop_start = time.time()
 
@@ -57,7 +58,7 @@ while True:
         if cooldown:
             print("in cooldown :", cooldowntime)
             cooldowntime += 1
-            if cooldowntime > fps*2:
+            if cooldowntime > cool_down_period:
                 cooldowntime = 0
                 cooldown = False
 
@@ -91,7 +92,7 @@ while True:
                                        f"{serve_count} fps:{fps_count}", org, font,
                                 fontScale, color, thickness, cv2.LINE_AA)
         frame = cv2.resize(frame2, (1280, 720))
-        cv2.imshow('test', frame2)
+        cv2.imshow('test', frame)
         out.write((frame2))
         cv2.waitKey(1)
         if 0xFF == ord('q'):
